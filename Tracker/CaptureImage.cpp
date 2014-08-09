@@ -22,7 +22,6 @@ CaptureImage::~CaptureImage(){
 void CaptureImage::Capture(){
 	iplimage = cvQueryFrame( videoCapture );
 	image = cvarrToMat(iplimage);
-	resize(image, image, Size(), 0.5, 0.5);
 	//cout << image.rows << image.cols << endl;
 }
 
