@@ -108,12 +108,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CaptureImage.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="HandDetect.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CaptureImage.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="HandDetect.h" />
     <ClInclude Include="Labeling.h" />
     <ClInclude Include="Main.h" />

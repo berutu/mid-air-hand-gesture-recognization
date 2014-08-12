@@ -2,4 +2,4 @@
 
 void onMouse(int event, int x, int y, int flags, void *);
 
-void DispHSV(CaptureImage*);
+void DispHSV(Camera*);

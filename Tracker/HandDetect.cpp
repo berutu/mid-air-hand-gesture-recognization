@@ -3,23 +3,21 @@
 HandDetecter::HandDetecter(){
 }
 
-void HandDetecter::Detect(){
-	captureImage.Capture();
-	image = captureImage.getImage();
-	resize(image, image, Size(), 0.5, 0.5);
+void HandDetecter::Detect(Mat* image){
+	this->image = *image;
+	resize(this->image, reduceImage, Size(), 0.25, 0.25);
 	FleshDetect();
 	Labeling();
 	Show();
-	captureImage.Show();
 }
 
 void HandDetecter::FleshDetect(){
-	Mat smoothImage(Size(image.cols, image.rows), CV_8UC3);
-	Mat hsvImage(Size(image.cols, image.rows), CV_8UC3);
+	Mat smoothImage(Size(reduceImage.cols, reduceImage.rows), CV_8UC3);
+	Mat hsvImage(Size(reduceImage.cols, reduceImage.rows), CV_8UC3);
 
-	skinImage = Mat(Size(image.cols, image.rows), CV_8UC1);
+	skinImage = Mat(Size(reduceImage.cols, reduceImage.rows), CV_8UC1);
 	
-	medianBlur(image, smoothImage, 7);
+	medianBlur(reduceImage, smoothImage, 7);
 	cvtColor(smoothImage, hsvImage, CV_BGR2HSV);
 
 	for(int i = 0; i < hsvImage.rows;i++)
@@ -38,14 +36,14 @@ void HandDetecter::FleshDetect(){
 void HandDetecter::Labeling(){
 	RNG rnd(1192);
 	LabelingBS labeling;
-	Mat allLabelImage(image.size(), CV_16SC1);
-	Mat grayLabelImage(image.size(), CV_8UC1);
+	Mat allLabelImage(reduceImage.size(), CV_16SC1);
+	Mat grayLabelImage(reduceImage.size(), CV_8UC1);
 
 	labeling.Exec(skinImage.data, (short*)allLabelImage.data, skinImage.cols, skinImage.rows, true, 0);
 	compare(allLabelImage, 1, grayLabelImage, CV_CMP_EQ);
 
+	resize(grayLabelImage, grayLabelImage, Size(), 4, 4);
 	labelImage = Mat(image.size(), CV_8UC3);
-
 	for(int i = 0; i < image.rows; i++)
 		for(int j = 0; j < image.cols; j++){
 			if(grayLabelImage.at<unsigned char>(i, j) == 255)
@@ -53,38 +51,64 @@ void HandDetecter::Labeling(){
 			else
 				labelImage.at<Vec3b>(i, j) = (0, 0, 0);
 		}
-
 	Outline(&grayLabelImage);
-
-	resize(grayLabelImage, grayLabelImage, Size(), 2, 2);
-	resize(labelImage, labelImage, Size(), 2, 2);
-	
 }
 
 void HandDetecter::Outline(Mat* grayImage){
-	CvMemStorage *storage = cvCreateMemStorage (0);
-	CvSeq *contours = NULL;
+	CvMemStorage *storage = cvCreateMemStorage(0);
+	contours = NULL;
+	IplImage iplgray = *grayImage;
+	cvShowImage("gray", &iplgray);
 	
-	cvFindContours(grayImage, storage, &contours, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-	
+	cvFindContours(&iplgray, storage, &contours, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 	if(contours != NULL){
 		IplImage iplImage = labelImage;
-		DrawOutline(&iplImage, contours);
+		//DrawOutline(&iplImage);
+		DrawPoint(&iplImage);
+		CalculateAngle(&iplImage);
 	}
 }
 
-void HandDetecter::DrawOutline(IplImage* iplImage, CvSeq* contours){
+void HandDetecter::DrawOutline(IplImage* iplImage){
 	CvScalar ContoursColor = CV_RGB(255, 0, 0);
-	
-	cvDrawContours(&iplImage, contours, ContoursColor, ContoursColor, 0, 2);
+	cvDrawContours(iplImage, contours, ContoursColor, ContoursColor, 0, 2);
+	cvShowImage("image", iplImage);
 
-	if(contours->h_next != NULL)
-		DrawOutline(iplImage, contours->h_next);
-	else
-		labelImage = cvarrToMat(iplImage);
+}
+
+void HandDetecter::DrawPoint(IplImage* iplImage){
+	CvPoint* point;
+	for(int i = 0; i < contours->total; i = i+10){
+		point = (CvPoint*)cvGetSeqElem(contours, i);
+		cvCircle(iplImage, *point, 6, CV_RGB(0, 255, 0), 2);
+	}
+	cvShowImage("Pointimage", iplImage);
+}
+
+void HandDetecter::CalculateAngle(IplImage* iplImage){
+	CvPoint *point1, *point2, *point3;
+	float angle = 0;
+	for(int i= 10; i < contours->total - 10; i = i+10){
+		point1 = (CvPoint*)cvGetSeqElem(contours, i-10);
+		point2 = (CvPoint*)cvGetSeqElem(contours, i);
+		point3 = (CvPoint*)cvGetSeqElem(contours, i+10);
+		//angle = fastAtan2(points[0].y - points[1].y, points[0].x - points[1].x)
+			//- fastAtan2(points[2].y - points[1].y, points[2].x - points[1].x);
+		angle = fastAtan2(point3->y - point2->y, point3->x - point2->x)
+			- fastAtan2(point1->y - point2->y, point1->x - point2->x);
+		if(angle < 0)
+			angle += 360;
+		
+		if(angle > 0 && angle < 120)
+			cvCircle(iplImage, *point2, 6, CV_RGB(255, 0, 0), 2);
+		/*if(angle > 190 && angle < 270)
+			cvCircle(iplImage, *point2, 6, CV_RGB(0, 0, 255), 2);*/
+		cvShowImage("image", iplImage);
+	}
 }
 
 void HandDetecter::Show(){
-	imshow("skin", skinImage);
-	imshow("out", labelImage);
+	imshow("DetectImage", this->image);
+	//imshow("skin", skinImage);
+	//imshow("out", labelImage);
 }

@@ -3,13 +3,16 @@
 Mat image;
 
 int main(){
+	Camera camera;
 	HandDetecter handDetector;
-	/*CaptureImage captureImage;
-	setMouseCallback("CameraImage", onMouse, 0);
-	DispHSV(&captureImage);
+	/*
+	setMouseCallback("Camera", onMouse, 0);
+	DispHSV(&camera);
 	*/
 	while(cvWaitKey(1) == -1){
-		handDetector.Detect();
+		camera.Capture();
+		handDetector.Detect(&camera.getImage());
+		//camera.Show();
 	}
 }
 
@@ -24,11 +27,11 @@ void onMouse(int event, int x, int y, int flags, void *){
 	}
 }
 
-void DispHSV(CaptureImage* captureImage){
+void DispHSV(Camera* camera){
 	while(cvWaitKey(1) == -1){
-		captureImage->Capture();
-		captureImage->ConvertHSV();
-		image = captureImage->getImage();
-		captureImage->Show();
+		camera->Capture();
+		camera->ConvertHSV();
+		image = camera->getImage();
+		camera->Show();
 	}
 }
