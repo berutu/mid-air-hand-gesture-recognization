@@ -1,17 +1,24 @@
 #include "Main.h"
+#include <Windows.h>
+#include <mmsystem.h>
 
 Mat image;
 
 int main(){
 	Camera camera;
 	HandDetecter handDetector;
+	DWORD startTime, endTime, passTime;
 	/*
 	setMouseCallback("Camera", onMouse, 0);
 	DispHSV(&camera);
 	*/
 	while(cvWaitKey(1) == -1){
+		startTime = timeGetTime();
 		camera.Capture();
 		handDetector.Detect(&camera.getImage());
+		endTime = timeGetTime();
+		passTime = endTime - startTime;
+		cout << (float)1000 / passTime << endl;
 		//camera.Show();
 	}
 }
@@ -35,3 +42,4 @@ void DispHSV(Camera* camera){
 		camera->Show();
 	}
 }
+
