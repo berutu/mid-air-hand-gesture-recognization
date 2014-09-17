@@ -5,13 +5,15 @@
 class HandDetecter
 {
 	private :
-		Mat image, reduceImage, skinImage, labelImage;
+		Mat image, reduceImage, skinImage, labelImage, backProject;
+		MatND hist;
 		float centerX, centerY;
 		list<Point> fingers;
 		list<Point> hands;
 		CvSeq *contours;
 	public :
 		HandDetecter();
+		void Hist();
 		void Detect(Mat*);
 		void FleshDetect();
 		void Labeling();
@@ -21,4 +23,5 @@ class HandDetecter
 		void CalculateAngle(IplImage*);
 		void Draw();
 		void Show();
+		void Find();
 };

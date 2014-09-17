@@ -3,13 +3,27 @@
 HandDetecter::HandDetecter(){
 }
 
+void HandDetecter::Hist(){
+	int hbins = 30, sbins = 32;
+    int histSize[] = {hbins, sbins};
+	int channels[] = {0, 1};
+	float hranges[] = { 0, 180 };
+    // 彩度の範囲は 0 （黒-灰色-白）から
+    // 255 （純粋なスペクトルカラー）までです．
+    float sranges[] = { 0, 256 };
+    const float* ranges[] = { hranges, sranges };
+	Mat skin = imread("./Capture.png");
+	calcHist(&skin, 1, channels, Mat(), hist, 2, histSize, ranges, true, false);
+}
+
 void HandDetecter::Detect(Mat* image){
 	this->image = *image;
-	resize(this->image, reduceImage, Size(), 0.5, 0.5);
+	/*resize(this->image, reduceImage, Size(), 0.5, 0.5);
 	FleshDetect();
 	Labeling();
 	Draw();
-	Show();
+	Show();*/
+	Find();
 }
 
 void HandDetecter::FleshDetect(){
@@ -24,7 +38,7 @@ void HandDetecter::FleshDetect(){
 	for(int i = 0; i < hsvImage.rows;i++)
 		for(int j = 0; j < hsvImage.cols; j++){
 			int a = hsvImage.step * i + (j * 3);
-			if((hsvImage.data[a] >= 0 || hsvImage.data[a] <= 5) && hsvImage.data[a+1] >= 110 && hsvImage.data[a+2] >= 50)
+			if(((hsvImage.data[a] >= 0 && hsvImage.data[a] <= 50) || (hsvImage.data[a] >= 150 && hsvImage.data[a] <= 180)) && hsvImage.data[a+1] <= 150 && hsvImage.data[a+2] >= 80)
 			{
 				skinImage.at<unsigned char>(i, j) = 255;
 			}else{
@@ -149,6 +163,51 @@ void HandDetecter::Draw(){
 	fingers.clear();
 	
 	imshow("Image", showImage);
+}
+
+void HandDetecter::Find(){
+	vector<vector<Point>> contours;
+	vector<Vec4i> hierarchy;
+	vector<Point> handContours;
+
+	Mat hsv;
+	cvtColor(image, hsv, CV_RGB2HSV);
+
+	Mat backProject(hsv.size(), CV_8UC1);
+
+	float hranges[] = { 0, 179 };
+	float sranges[] = { 0, 255 };
+	const float* ranges[] = { hranges, sranges };
+	int channels[] = {0, 1};
+
+	//resize(skinImage, skinImage, Size(), 2, 2);
+
+	calcBackProject(&hsv, 1, channels, hist, backProject, ranges, 1, true);
+	threshold(backProject, backProject, 30, 255, CV_THRESH_BINARY);
+	medianBlur(backProject, backProject, 9);
+
+	findContours(backProject, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0,0));
+
+	if(!contours.empty()){
+	double maxArea = 0.0F;
+	int maxContour = 0;
+	for(int i = 0; i < contours.size(); i++){
+		double area = contourArea(contours[i]);
+		if(area > maxArea){
+			maxArea = area;
+			maxContour = i;
+		}
+	}
+
+	Moments m = moments(contours[maxContour], true);
+	Point2i p = Point2i(m.m10/m.m00, m.m01/m.m00);
+
+	drawContours(image, contours, maxContour, Scalar(255, 0, 0), 3);
+	circle(image, p, 3, Scalar(0, 255, 0), 3);
+	imshow("image", image);
+	//imshow("skinImage", skinImage);
+	imshow("backProject", backProject);
+	}
 }
 
 void HandDetecter::Show(){

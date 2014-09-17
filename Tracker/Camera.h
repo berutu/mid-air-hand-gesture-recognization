@@ -10,11 +10,13 @@ class Camera
 
 	public:
 		Camera();
+		~Camera();
 		void Capture();
 		void Show();
 		Mat getImage();
 		void ConvertHSV();
-		~Camera();
+		void FileWrite();
+		
 
 	/*static void Mouse(int event, int x, int y, int flags, void *){
 	switch(event){

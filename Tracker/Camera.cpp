@@ -37,3 +37,7 @@ Mat Camera::getImage(){
 void Camera::ConvertHSV(){
 	cvtColor(image, image,  CV_BGR2HSV);
 }
+
+void Camera::FileWrite(){
+	imwrite("./Capture.png", image);
+}

@@ -8,10 +8,13 @@ int main(){
 	Camera camera;
 	HandDetecter handDetector;
 	DWORD startTime, endTime, passTime;
-	/*
-	setMouseCallback("Camera", onMouse, 0);
-	DispHSV(&camera);
-	*/
+	
+	
+	//setMouseCallback("CameraImage", onMouse, 0);
+	//DispHSV(&camera);
+
+	handDetector.Hist();
+	
 	while(cvWaitKey(1) == -1){
 		startTime = timeGetTime();
 		camera.Capture();
@@ -21,6 +24,9 @@ int main(){
 		cout << (float)1000 / passTime << endl;
 		//camera.Show();
 	}
+	camera.Capture();
+	camera.Show();
+	camera.FileWrite();
 }
 
 void onMouse(int event, int x, int y, int flags, void *){
